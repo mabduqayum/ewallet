@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"ewallet/internal/config"
 	"fmt"
@@ -13,7 +12,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Service represents a service that interacts with a database.
@@ -24,36 +23,45 @@ type Service interface {
 
 	// Close terminates the database connection.
 	// It returns an error if the connection cannot be closed.
-	Close() error
+	Close()
 
 	RunMigrations() error
+	GetPool() *pgxpool.Pool
 }
 
 type service struct {
-	db     *sql.DB
+	db     *pgxpool.Pool
 	config *config.Config
 }
 
 var dbInstance *service
 
-func New(cfg *config.Config) Service {
+func New(ctx context.Context, cfg *config.Config) (Service, error) {
 	// Reuse Connection
 	if dbInstance != nil {
-		return dbInstance
+		return dbInstance, nil
 	}
 
 	connStr := cfg.Database.ConnectionString()
 
-	db, err := sql.Open("pgx", connStr)
+	poolConfig, err := pgxpool.ParseConfig(connStr)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("unable to parse connection string: %v", err)
+	}
+
+	// Set additional pool configuration if needed
+	// poolConfig.MaxConns = 10
+
+	db, err := pgxpool.NewWithConfig(ctx, poolConfig)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create connection pool: %v", err)
 	}
 
 	dbInstance = &service{
 		db:     db,
 		config: cfg,
 	}
-	return dbInstance
+	return dbInstance, nil
 }
 
 // Health checks the health of the database connection by pinging the database.
@@ -65,11 +73,11 @@ func (s *service) Health() map[string]string {
 	stats := make(map[string]string)
 
 	// Ping the database
-	err := s.db.PingContext(ctx)
+	err := s.db.Ping(ctx)
 	if err != nil {
 		stats["status"] = "down"
 		stats["error"] = fmt.Sprintf("db down: %v", err)
-		log.Fatalf(fmt.Sprintf("db down: %v", err)) // Log the error and terminate the program
+		log.Printf("Database health check failed: %v", err)
 		return stats
 	}
 
@@ -77,43 +85,28 @@ func (s *service) Health() map[string]string {
 	stats["status"] = "up"
 	stats["message"] = "It's healthy"
 
-	// Get database stats (like open connections, in use, idle, etc.)
-	dbStats := s.db.Stats()
-	stats["open_connections"] = strconv.Itoa(dbStats.OpenConnections)
-	stats["in_use"] = strconv.Itoa(dbStats.InUse)
-	stats["idle"] = strconv.Itoa(dbStats.Idle)
-	stats["wait_count"] = strconv.FormatInt(dbStats.WaitCount, 10)
-	stats["wait_duration"] = dbStats.WaitDuration.String()
-	stats["max_idle_closed"] = strconv.FormatInt(dbStats.MaxIdleClosed, 10)
-	stats["max_lifetime_closed"] = strconv.FormatInt(dbStats.MaxLifetimeClosed, 10)
+	// Get pool stats
+	poolStats := s.db.Stat()
+	stats["total_connections"] = strconv.Itoa(int(poolStats.TotalConns()))
+	stats["acquired_connections"] = strconv.Itoa(int(poolStats.AcquiredConns()))
+	stats["idle_connections"] = strconv.Itoa(int(poolStats.IdleConns()))
 
 	// Evaluate stats to provide a health message
-	if dbStats.OpenConnections > 40 { // Assuming 50 is the max for this example
+	if poolStats.TotalConns() > 40 { // Assuming 50 is the max for this example
 		stats["message"] = "The database is experiencing heavy load."
 	}
 
-	if dbStats.WaitCount > 1000 {
-		stats["message"] = "The database has a high number of wait events, indicating potential bottlenecks."
-	}
-
-	if dbStats.MaxIdleClosed > int64(dbStats.OpenConnections)/2 {
-		stats["message"] = "Many idle connections are being closed, consider revising the connection pool settings."
-	}
-
-	if dbStats.MaxLifetimeClosed > int64(dbStats.OpenConnections)/2 {
-		stats["message"] = "Many connections are being closed due to max lifetime, consider increasing max lifetime or revising the connection usage pattern."
+	if poolStats.AcquiredConns() > poolStats.TotalConns()/2 {
+		stats["message"] = "More than half of the connections are in use, indicating high load."
 	}
 
 	return stats
 }
 
-// Close closes the database connection.
-// It logs a message indicating the disconnection from the specific database.
-// If the connection is successfully closed, it returns nil.
-// If an error occurs while closing the connection, it returns the error.
-func (s *service) Close() error {
-	log.Printf("Disconnected from database: %s", s.config.Database.DBName)
-	return s.db.Close()
+// Close closes the database connection pool.
+func (s *service) Close() {
+	log.Printf("Closing connection pool to database: %s", s.config.Database.DBName)
+	s.db.Close()
 }
 
 func (s *service) RunMigrations() error {
@@ -130,4 +123,9 @@ func (s *service) RunMigrations() error {
 
 	log.Println("Migrations completed successfully")
 	return nil
+}
+
+// GetPool a method to get the database pool if needed in other parts of your application
+func (s *service) GetPool() *pgxpool.Pool {
+	return s.db
 }

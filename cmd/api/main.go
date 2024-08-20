@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"ewallet/internal/config"
 	"ewallet/internal/database"
 	"ewallet/internal/server"
@@ -21,7 +22,11 @@ func main() {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
-	db := database.New(cfg)
+	ctx := context.Background()
+	db, err := database.New(ctx, cfg)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
 	defer db.Close()
 
 	if err := db.RunMigrations(); err != nil {
