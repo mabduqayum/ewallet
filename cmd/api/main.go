@@ -24,6 +24,10 @@ func main() {
 	db := database.New(cfg)
 	defer db.Close()
 
+	if err := db.RunMigrations(); err != nil {
+		log.Fatalf("Failed to run database migrations: %v", err)
+	}
+
 	s := server.New(cfg, db)
 	s.RegisterFiberRoutes()
 

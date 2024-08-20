@@ -3,13 +3,16 @@ package database
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"ewallet/internal/config"
 	"fmt"
 	"log"
 	"strconv"
 	"time"
 
-	"ewallet/internal/config"
-
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -22,6 +25,8 @@ type Service interface {
 	// Close terminates the database connection.
 	// It returns an error if the connection cannot be closed.
 	Close() error
+
+	RunMigrations() error
 }
 
 type service struct {
@@ -109,4 +114,20 @@ func (s *service) Health() map[string]string {
 func (s *service) Close() error {
 	log.Printf("Disconnected from database: %s", s.config.Database.DBName)
 	return s.db.Close()
+}
+
+func (s *service) RunMigrations() error {
+	migrationPath := "file://migrations"
+	m, err := migrate.New(migrationPath, s.config.Database.ConnectionString())
+	if err != nil {
+		return fmt.Errorf("failed to create migrate instance: %w", err)
+	}
+	defer m.Close()
+
+	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return fmt.Errorf("failed to run migrations: %w", err)
+	}
+
+	log.Println("Migrations completed successfully")
+	return nil
 }
