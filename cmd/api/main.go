@@ -1,20 +1,34 @@
 package main
 
 import (
+	"ewallet/internal/config"
+	"ewallet/internal/database"
 	"ewallet/internal/server"
-	"fmt"
+	"log"
 	"os"
-	"strconv"
 
 	_ "github.com/joho/godotenv/autoload"
 )
 
 func main() {
-	s := server.New()
-	s.RegisterFiberRoutes()
-	port, _ := strconv.Atoi(os.Getenv("PORT"))
-	err := s.Listen(fmt.Sprintf(":%d", port))
+	env := os.Getenv("APP_ENV")
+	if env == "" {
+		env = "development"
+	}
+
+	cfg, err := config.LoadConfig(env)
 	if err != nil {
-		panic(fmt.Sprintf("cannot start server: %s", err))
+		log.Fatalf("Failed to load configuration: %v", err)
+	}
+
+	db := database.New(cfg)
+	defer db.Close()
+
+	s := server.New(cfg, db)
+	s.RegisterFiberRoutes()
+
+	log.Printf("Starting server on %s", cfg.Server.Address())
+	if err := s.Listen(); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
 	}
 }

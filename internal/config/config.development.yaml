@@ -1,0 +1,20 @@
+server:
+  port: 8080
+  host: "localhost"
+  version: "1.0.0"
+
+database:
+  host: "localhost"
+  port: 5432
+  dbname: "ewallet_db"
+  user: "ewallet_user"
+  password: "ewallet_password"
+  SSLMode: "disable"
+  schema: "public"
+
+wallet:
+  unidentifiedLimit: 10_000
+  identifiedLimit: 100_000
+
+logging:
+  level: "debug"

@@ -95,6 +95,6 @@ func TestClose(t *testing.T) {
 	srv := New()
 
 	if srv.Close() != nil {
-		t.Fatalf("expected Close() to return nil")
+		t.Fatalf("expected Shutdown() to return nil")
 	}
 }
