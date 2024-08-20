@@ -21,8 +21,8 @@ type PostgresWalletRepository struct {
 	pool *pgxpool.Pool
 }
 
-func NewPostgresWalletRepository(db *pgxpool.Pool) *PostgresWalletRepository {
-	return &PostgresWalletRepository{pool: db}
+func NewPostgresWalletRepository(pool *pgxpool.Pool) *PostgresWalletRepository {
+	return &PostgresWalletRepository{pool: pool}
 }
 
 func (r *PostgresWalletRepository) Exists(ctx context.Context, walletID uuid.UUID) (bool, error) {
