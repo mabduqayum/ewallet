@@ -3,35 +3,45 @@ package server
 import (
 	"ewallet/internal/config"
 	"ewallet/internal/database"
-
+	"ewallet/internal/repository"
+	"ewallet/internal/services"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 )
 
 type FiberServer struct {
-	*fiber.App
-
+	app *fiber.App
 	db  database.Service
 	cfg *config.Config
+
+	walletService *services.WalletService
 }
 
 func New(cfg *config.Config, db database.Service) *FiberServer {
+	walletRepo := repository.NewPostgresWalletRepository(db.GetPool())
+	walletService := services.NewWalletService(walletRepo)
+
 	server := &FiberServer{
-		App: fiber.New(fiber.Config{
+		app: fiber.New(fiber.Config{
 			ServerHeader: "ewallet",
 			AppName:      "ewallet v" + cfg.Server.Version,
 		}),
 
-		db:  db,
-		cfg: cfg,
+		db:            db,
+		cfg:           cfg,
+		walletService: walletService,
 	}
+
+	// Add recover middleware
+	server.app.Use(recover.New())
 
 	return server
 }
 
 func (s *FiberServer) Listen() error {
-	return s.App.Listen(s.cfg.Server.Address())
+	return s.app.Listen(s.cfg.Server.Address())
 }
 
 func (s *FiberServer) Shutdown() error {
-	return s.App.Shutdown()
+	return s.app.Shutdown()
 }

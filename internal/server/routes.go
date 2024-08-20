@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"ewallet/internal/handlers"
 	"fmt"
 	"log"
 	"time"
@@ -12,12 +13,18 @@ import (
 )
 
 func (s *FiberServer) RegisterFiberRoutes() {
-	s.App.Get("/", s.HelloWorldHandler)
+	s.app.Get("/", s.HelloWorldHandler)
+	s.app.Get("/health", s.healthHandler)
+	s.app.Get("/websocket", websocket.New(s.websocketHandler))
 
-	s.App.Get("/health", s.healthHandler)
+	api := s.app.Group("/api/v1")
 
-	s.App.Get("/websocket", websocket.New(s.websocketHandler))
-
+	wallet := api.Group("/wallet")
+	walletHandler := handlers.NewWalletHandler(s.walletService)
+	wallet.Post("/exists", walletHandler.CheckWalletExists)
+	wallet.Post("/top-up", walletHandler.TopUpWallet)
+	wallet.Post("/stats", walletHandler.GetMonthlyTopUpStats)
+	wallet.Post("/balance", walletHandler.GetBalance)
 }
 
 func (s *FiberServer) HelloWorldHandler(c *fiber.Ctx) error {
