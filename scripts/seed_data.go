@@ -53,13 +53,14 @@ func SeedWallets(ctx context.Context, db database.Service, clients []*models.Cli
 }
 
 func SeedTransactions(ctx context.Context, db database.Service, wallets []*models.Wallet) {
-	rand.Seed(time.Now().UnixNano())
+	source := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(source)
 
 	for _, wallet := range wallets {
-		numTransactions := rand.Intn(10) + 1 // 1 to 10 transactions per wallet
+		numTransactions := r.Intn(10) + 1 // 1 to 10 transactions per wallet
 
 		for i := 0; i < numTransactions; i++ {
-			amount := rand.Float64() * 1000 // Random amount up to 1000
+			amount := r.Float64() * 1000 // Random amount up to 1000
 			transaction := models.NewTransaction(wallet.ID, models.TransactionTypeTopUp, amount, "Initial top-up")
 
 			_, err := db.GetPool().Exec(ctx,
