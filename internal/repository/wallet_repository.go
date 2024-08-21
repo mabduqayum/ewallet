@@ -16,7 +16,7 @@ type WalletRepository interface {
 	Create(ctx context.Context, wallet models.Wallet) error
 	Exists(ctx context.Context, walletID uuid.UUID) (bool, error)
 	GetByID(ctx context.Context, walletID uuid.UUID) (*models.Wallet, error)
-	Update(ctx context.Context, wallet *models.Wallet) error
+	Update(ctx context.Context, wallet *models.Wallet, amount float64) error
 	GetMonthlyTopUpStats(ctx context.Context, walletID uuid.UUID) (int, float64, error)
 }
 
@@ -62,10 +62,34 @@ func (r *PostgresWalletRepository) GetByID(ctx context.Context, walletID uuid.UU
 	return wallet, err
 }
 
-func (r *PostgresWalletRepository) Update(ctx context.Context, wallet *models.Wallet) error {
-	_, err := r.pool.Exec(ctx, "UPDATE wallets SET balance = $1, updated_at = $2 WHERE id = $3",
+func (r *PostgresWalletRepository) Update(ctx context.Context, wallet *models.Wallet, amount float64) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = tx.Exec(ctx,
+		"UPDATE wallets SET balance = $1, updated_at = $2 WHERE id = $3",
 		wallet.Balance, time.Now(), wallet.ID)
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to update wallet balance: %w", err)
+	}
+
+	transaction := models.NewTransaction(wallet.ID, models.TransactionTypeTopUp, amount, "Top-up")
+	_, err = tx.Exec(ctx, `
+			INSERT INTO transactions (id, wallet_id, type, amount, description, created_at, updated_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)
+	`, transaction.ID, transaction.WalletID, transaction.Type, transaction.Amount, transaction.Description, transaction.CreatedAt, transaction.UpdatedAt)
+	if err != nil {
+		return fmt.Errorf("failed to create transaction record: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
 }
 
 func (r *PostgresWalletRepository) GetMonthlyTopUpStats(ctx context.Context, walletID uuid.UUID) (int, float64, error) {
@@ -74,7 +98,9 @@ func (r *PostgresWalletRepository) GetMonthlyTopUpStats(ctx context.Context, wal
 	err := r.pool.QueryRow(ctx, `
 		SELECT COUNT(*), COALESCE(SUM(amount), 0)
 		FROM transactions
-		WHERE wallet_id = $1 AND type = 'top_up' AND created_at >= DATE_TRUNC('month', CURRENT_DATE)
+		WHERE wallet_id = $1
+		  AND type = 'TOP_UP'
+		  AND created_at >= DATE_TRUNC('month', CURRENT_DATE)
 	`, walletID).Scan(&count, &sum)
 	return count, sum, err
 }

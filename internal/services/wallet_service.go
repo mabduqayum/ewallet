@@ -35,7 +35,7 @@ func (s *WalletService) TopUpWallet(ctx context.Context, walletID uuid.UUID, amo
 		return err
 	}
 
-	return s.repo.Update(ctx, wallet)
+	return s.repo.Update(ctx, wallet, amount)
 }
 
 func (s *WalletService) GetMonthlyTopUpStats(ctx context.Context, walletID uuid.UUID) (int, float64, error) {
