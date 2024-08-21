@@ -1,9 +1,8 @@
-// internal/handlers/wallet_handler.go
-
 package handlers
 
 import (
 	"ewallet/internal/services"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 )

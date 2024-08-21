@@ -6,9 +6,10 @@ import (
 	"errors"
 	"ewallet/internal/models"
 	"fmt"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"time"
 )
 
 type WalletRepository interface {
