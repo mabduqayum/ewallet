@@ -16,7 +16,6 @@ const (
 
 type Wallet struct {
 	ID        uuid.UUID  `json:"id"`
-	ClientID  uuid.UUID  `json:"client_id"`
 	Type      WalletType `json:"type"`
 	Balance   float64    `json:"balance"`
 	Currency  string     `json:"currency"`
@@ -25,10 +24,9 @@ type Wallet struct {
 	UpdatedAt time.Time  `json:"updated_at"`
 }
 
-func NewWallet(clientID uuid.UUID, walletType WalletType, currency string) *Wallet {
+func NewWallet(walletType WalletType, currency string) *Wallet {
 	return &Wallet{
 		ID:        uuid.New(),
-		ClientID:  clientID,
 		Type:      walletType,
 		Balance:   0,
 		Currency:  currency,

@@ -16,7 +16,6 @@ type WalletRepository interface {
 	Create(ctx context.Context, wallet models.Wallet) error
 	Exists(ctx context.Context, walletID uuid.UUID) (bool, error)
 	GetByID(ctx context.Context, walletID uuid.UUID) (*models.Wallet, error)
-	GetByClientID(ctx context.Context, clientID uuid.UUID) ([]*models.Wallet, error)
 	Update(ctx context.Context, wallet *models.Wallet) error
 	GetMonthlyTopUpStats(ctx context.Context, walletID uuid.UUID) (int, float64, error)
 }
@@ -31,10 +30,9 @@ func NewPostgresWalletRepository(pool *pgxpool.Pool) *PostgresWalletRepository {
 
 func (r *PostgresWalletRepository) Create(ctx context.Context, wallet models.Wallet) error {
 	_, err := r.pool.Exec(ctx,
-		`INSERT INTO wallets (id, client_id, type, balance, currency, active, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+		`INSERT INTO wallets (id, type, balance, currency, active, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
 		wallet.ID,
-		wallet.ClientID,
 		wallet.Type,
 		wallet.Balance,
 		wallet.Currency,
@@ -57,37 +55,17 @@ func (r *PostgresWalletRepository) Exists(ctx context.Context, walletID uuid.UUI
 
 func (r *PostgresWalletRepository) GetByID(ctx context.Context, walletID uuid.UUID) (*models.Wallet, error) {
 	wallet := &models.Wallet{}
-	err := r.pool.QueryRow(ctx, "SELECT id, type, balance, created_at, updated_at FROM wallets WHERE id = $1", walletID).
-		Scan(&wallet.ID, &wallet.Type, &wallet.Balance, &wallet.CreatedAt, &wallet.UpdatedAt)
+	err := r.pool.QueryRow(ctx, "SELECT id, type, balance, currency, active, created_at, updated_at FROM wallets WHERE id = $1", walletID).
+		Scan(&wallet.ID, &wallet.Type, &wallet.Balance, &wallet.Currency, &wallet.Active, &wallet.CreatedAt, &wallet.UpdatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
 	return wallet, err
 }
 
-func (r *PostgresWalletRepository) GetByClientID(ctx context.Context, clientID uuid.UUID) ([]*models.Wallet, error) {
-	rows, err := r.pool.Query(ctx, "SELECT id, client_id, type, balance, currency, active, created_at, updated_at FROM wallets WHERE client_id = $1", clientID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var wallets []*models.Wallet
-	for rows.Next() {
-		wallet := &models.Wallet{}
-		err := rows.Scan(&wallet.ID, &wallet.ClientID, &wallet.Type, &wallet.Balance, &wallet.Currency, &wallet.Active, &wallet.CreatedAt, &wallet.UpdatedAt)
-		if err != nil {
-			return nil, err
-		}
-		wallets = append(wallets, wallet)
-	}
-
-	return wallets, nil
-}
-
 func (r *PostgresWalletRepository) Update(ctx context.Context, wallet *models.Wallet) error {
-	_, err := r.pool.Exec(ctx, "UPDATE wallets SET balance = $1, updated_at = $2 WHERE id = $3",
-		wallet.Balance, time.Now(), wallet.ID)
+	_, err := r.pool.Exec(ctx, "UPDATE wallets SET balance = $1, active = $2, updated_at = $3 WHERE id = $4",
+		wallet.Balance, wallet.Active, time.Now(), wallet.ID)
 	return err
 }
 

@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"errors"
-	"ewallet/internal/models"
 	"ewallet/internal/repository"
 	"fmt"
 
@@ -57,8 +56,4 @@ func (s *WalletService) GetBalance(ctx context.Context, walletID uuid.UUID) (flo
 	}
 
 	return wallet.Balance, nil
-}
-
-func (s *WalletService) GetWalletsByClientID(ctx context.Context, clientID uuid.UUID) ([]*models.Wallet, error) {
-	return s.repo.GetByClientID(ctx, clientID)
 }
