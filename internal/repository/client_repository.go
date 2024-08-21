@@ -12,6 +12,7 @@ type ClientRepository interface {
 	Create(ctx context.Context, client *models.Client) error
 	GetByID(ctx context.Context, id uuid.UUID) (*models.Client, error)
 	GetByAPIKey(ctx context.Context, apiKey string) (*models.Client, error)
+	GetAll(ctx context.Context) ([]*models.Client, error)
 	Update(ctx context.Context, client *models.Client) error
 	Delete(ctx context.Context, id uuid.UUID) error
 }
@@ -51,6 +52,26 @@ func (r *PostgresClientRepository) GetByAPIKey(ctx context.Context, apiKey strin
 		return nil, err
 	}
 	return client, nil
+}
+
+func (r *PostgresClientRepository) GetAll(ctx context.Context) ([]*models.Client, error) {
+	rows, err := r.pool.Query(ctx, "SELECT id, name, api_key, secret_key, active, created_at, updated_at FROM clients")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var clients []*models.Client
+	for rows.Next() {
+		client := &models.Client{}
+		err := rows.Scan(&client.ID, &client.Name, &client.ApiKey, &client.SecretKey, &client.Active, &client.CreatedAt, &client.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		clients = append(clients, client)
+	}
+
+	return clients, nil
 }
 
 func (r *PostgresClientRepository) Update(ctx context.Context, client *models.Client) error {

@@ -33,6 +33,10 @@ func (s *ClientService) GetClientByAPIKey(ctx context.Context, apiKey string) (*
 	return s.repo.GetByAPIKey(ctx, apiKey)
 }
 
+func (s *ClientService) GetAllClients(ctx context.Context) ([]*models.Client, error) {
+	return s.repo.GetAll(ctx)
+}
+
 func (s *ClientService) UpdateClient(ctx context.Context, client *models.Client) error {
 	return s.repo.Update(ctx, client)
 }

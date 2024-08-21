@@ -3,13 +3,13 @@ package server
 import (
 	"context"
 	"ewallet/internal/handlers"
+	"ewallet/internal/middleware"
 	"fmt"
 	"log"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
-
 	"github.com/gofiber/contrib/websocket"
+	"github.com/gofiber/fiber/v2"
 )
 
 func (s *FiberServer) RegisterFiberRoutes() {
@@ -17,7 +17,7 @@ func (s *FiberServer) RegisterFiberRoutes() {
 	s.app.Get("/health", s.healthHandler)
 	s.app.Get("/websocket", websocket.New(s.websocketHandler))
 
-	api := s.app.Group("/api/v1")
+	api := s.app.Group("/api/v1", middleware.AuthMiddleware(s.clientService))
 
 	wallet := api.Group("/wallet")
 	walletHandler := handlers.NewWalletHandler(s.walletService)

@@ -16,6 +16,7 @@ type WalletRepository interface {
 	Create(ctx context.Context, wallet models.Wallet) error
 	Exists(ctx context.Context, walletID uuid.UUID) (bool, error)
 	GetByID(ctx context.Context, walletID uuid.UUID) (*models.Wallet, error)
+	GetByClientID(ctx context.Context, clientID uuid.UUID) ([]*models.Wallet, error)
 	Update(ctx context.Context, wallet *models.Wallet) error
 	GetMonthlyTopUpStats(ctx context.Context, walletID uuid.UUID) (int, float64, error)
 }
@@ -62,6 +63,26 @@ func (r *PostgresWalletRepository) GetByID(ctx context.Context, walletID uuid.UU
 		return nil, nil
 	}
 	return wallet, err
+}
+
+func (r *PostgresWalletRepository) GetByClientID(ctx context.Context, clientID uuid.UUID) ([]*models.Wallet, error) {
+	rows, err := r.pool.Query(ctx, "SELECT id, client_id, type, balance, currency, active, created_at, updated_at FROM wallets WHERE client_id = $1", clientID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var wallets []*models.Wallet
+	for rows.Next() {
+		wallet := &models.Wallet{}
+		err := rows.Scan(&wallet.ID, &wallet.ClientID, &wallet.Type, &wallet.Balance, &wallet.Currency, &wallet.Active, &wallet.CreatedAt, &wallet.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		wallets = append(wallets, wallet)
+	}
+
+	return wallets, nil
 }
 
 func (r *PostgresWalletRepository) Update(ctx context.Context, wallet *models.Wallet) error {
