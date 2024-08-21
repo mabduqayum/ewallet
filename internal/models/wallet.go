@@ -36,7 +36,7 @@ func NewWallet(walletType WalletType, currency string) *Wallet {
 	}
 }
 
-func (w *Wallet) GetMaxBalance() float64 {
+func (w *Wallet) getMaxBalance() float64 {
 	switch w.Type {
 	case WalletTypeIdentified:
 		return 100_000
@@ -52,15 +52,9 @@ func (w *Wallet) UpdateBalance(amount float64) error {
 	if newBalance < 0 {
 		return errors.New("insufficient funds")
 	}
-	if newBalance > w.GetMaxBalance() {
+	if newBalance > w.getMaxBalance() {
 		return errors.New("balance exceeds maximum limit")
 	}
 	w.Balance = newBalance
-	w.UpdatedAt = time.Now()
 	return nil
-}
-
-func (w *Wallet) Activate() {
-	w.Active = true
-	w.UpdatedAt = time.Now()
 }

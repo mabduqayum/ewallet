@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"ewallet/internal/repository"
-	"fmt"
 
 	"github.com/google/uuid"
 )
@@ -31,13 +30,11 @@ func (s *WalletService) TopUpWallet(ctx context.Context, walletID uuid.UUID, amo
 		return errors.New("wallet not found")
 	}
 
-	newBalance := wallet.Balance + amount
-
-	if maxBalance := wallet.GetMaxBalance(); newBalance > maxBalance {
-		return errors.New(fmt.Sprintf("unidentified wallet balance cannot exceed %.2f", maxBalance))
+	err = wallet.UpdateBalance(amount)
+	if err != nil {
+		return err
 	}
 
-	wallet.Balance = newBalance
 	return s.repo.Update(ctx, wallet)
 }
 
