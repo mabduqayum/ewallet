@@ -30,13 +30,12 @@ func NewPostgresWalletRepository(pool *pgxpool.Pool) *PostgresWalletRepository {
 
 func (r *PostgresWalletRepository) Create(ctx context.Context, wallet models.Wallet) error {
 	_, err := r.pool.Exec(ctx,
-		`INSERT INTO wallets (id, type, balance, currency, active, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		`INSERT INTO wallets (id, type, balance, currency, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
 		wallet.ID,
 		wallet.Type,
 		wallet.Balance,
 		wallet.Currency,
-		wallet.Active,
 		wallet.CreatedAt,
 		wallet.UpdatedAt)
 
@@ -55,8 +54,8 @@ func (r *PostgresWalletRepository) Exists(ctx context.Context, walletID uuid.UUI
 
 func (r *PostgresWalletRepository) GetByID(ctx context.Context, walletID uuid.UUID) (*models.Wallet, error) {
 	wallet := &models.Wallet{}
-	err := r.pool.QueryRow(ctx, "SELECT id, type, balance, currency, active, created_at, updated_at FROM wallets WHERE id = $1", walletID).
-		Scan(&wallet.ID, &wallet.Type, &wallet.Balance, &wallet.Currency, &wallet.Active, &wallet.CreatedAt, &wallet.UpdatedAt)
+	err := r.pool.QueryRow(ctx, "SELECT id, type, balance, currency, created_at, updated_at FROM wallets WHERE id = $1", walletID).
+		Scan(&wallet.ID, &wallet.Type, &wallet.Balance, &wallet.Currency, &wallet.CreatedAt, &wallet.UpdatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -64,8 +63,8 @@ func (r *PostgresWalletRepository) GetByID(ctx context.Context, walletID uuid.UU
 }
 
 func (r *PostgresWalletRepository) Update(ctx context.Context, wallet *models.Wallet) error {
-	_, err := r.pool.Exec(ctx, "UPDATE wallets SET balance = $1, active = $2, updated_at = $3 WHERE id = $4",
-		wallet.Balance, wallet.Active, time.Now(), wallet.ID)
+	_, err := r.pool.Exec(ctx, "UPDATE wallets SET balance = $1, updated_at = $2 WHERE id = $3",
+		wallet.Balance, time.Now(), wallet.ID)
 	return err
 }
 
