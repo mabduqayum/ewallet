@@ -25,14 +25,15 @@ func main() {
 	}
 	defer db.Close()
 
-	// Seed clients
-	clients := scripts.SeedClients(ctx, db)
+	// Run migrations if needed
+	if err := db.RunMigrations(); err != nil {
+		log.Fatalf("Failed to run database migrations: %v", err)
+	}
 
-	// Seed wallets
-	wallets := scripts.SeedWallets(ctx, db, clients)
-
-	// Seed transactions
-	scripts.SeedTransactions(ctx, db, wallets)
+	// Seed data
+	if err := scripts.SeedData(ctx, db.GetPool()); err != nil {
+		log.Fatalf("Failed to seed data: %v", err)
+	}
 
 	log.Println("Seeding completed successfully")
 }

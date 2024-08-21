@@ -2,14 +2,39 @@ package scripts
 
 import (
 	"context"
-	"ewallet/internal/database"
 	"ewallet/internal/models"
+	"ewallet/internal/repository"
 	"log"
 	"math/rand"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func SeedClients(ctx context.Context, db database.Service) []*models.Client {
+func SeedData(ctx context.Context, pool *pgxpool.Pool) error {
+	clientRepo := repository.NewPostgresClientRepository(pool)
+	walletRepo := repository.NewPostgresWalletRepository(pool)
+	transactionRepo := repository.NewPostgresTransactionRepository(pool)
+
+	clients, err := seedClients(ctx, clientRepo)
+	if err != nil {
+		return err
+	}
+
+	wallets, err := seedWallets(ctx, walletRepo, clients)
+	if err != nil {
+		return err
+	}
+
+	err = seedTransactions(ctx, transactionRepo, walletRepo, wallets)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func seedClients(ctx context.Context, repo repository.ClientRepository) ([]*models.Client, error) {
 	clients := []*models.Client{
 		models.NewClient("Client 1"),
 		models.NewClient("Client 2"),
@@ -17,19 +42,17 @@ func SeedClients(ctx context.Context, db database.Service) []*models.Client {
 	}
 
 	for _, client := range clients {
-		_, err := db.GetPool().Exec(ctx,
-			"INSERT INTO clients (id, name, api_key, secret_key, active, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-			client.ID, client.Name, client.ApiKey, client.SecretKey, client.Active, client.CreatedAt, client.UpdatedAt)
+		err := repo.Create(ctx, client)
 		if err != nil {
-			log.Fatalf("Failed to insert client: %v", err)
+			return nil, err
 		}
 	}
 
 	log.Printf("Seeded %d clients", len(clients))
-	return clients
+	return clients, nil
 }
 
-func SeedWallets(ctx context.Context, db database.Service, clients []*models.Client) []*models.Wallet {
+func seedWallets(ctx context.Context, repo repository.WalletRepository, clients []*models.Client) ([]*models.Wallet, error) {
 	wallets := make([]*models.Wallet, 0)
 
 	for _, client := range clients {
@@ -39,20 +62,18 @@ func SeedWallets(ctx context.Context, db database.Service, clients []*models.Cli
 		wallets = append(wallets, identifiedWallet, unidentifiedWallet)
 
 		for _, wallet := range []*models.Wallet{identifiedWallet, unidentifiedWallet} {
-			_, err := db.GetPool().Exec(ctx,
-				"INSERT INTO wallets (id, client_id, type, balance, currency, active, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-				wallet.ID, wallet.ClientID, wallet.Type, wallet.Balance, wallet.Currency, wallet.Active, wallet.CreatedAt, wallet.UpdatedAt)
+			err := repo.Create(ctx, *wallet)
 			if err != nil {
-				log.Fatalf("Failed to insert wallet: %v", err)
+				return nil, err
 			}
 		}
 	}
 
 	log.Printf("Seeded %d wallets", len(wallets))
-	return wallets
+	return wallets, nil
 }
 
-func SeedTransactions(ctx context.Context, db database.Service, wallets []*models.Wallet) {
+func seedTransactions(ctx context.Context, transactionRepo repository.TransactionRepository, walletRepo repository.WalletRepository, wallets []*models.Wallet) error {
 	source := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(source)
 
@@ -63,22 +84,20 @@ func SeedTransactions(ctx context.Context, db database.Service, wallets []*model
 			amount := r.Float64() * 1000 // Random amount up to 1000
 			transaction := models.NewTransaction(wallet.ID, models.TransactionTypeTopUp, amount, "Initial top-up")
 
-			_, err := db.GetPool().Exec(ctx,
-				"INSERT INTO transactions (id, wallet_id, type, amount, description, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-				transaction.ID, transaction.WalletID, transaction.Type, transaction.Amount, transaction.Description, transaction.CreatedAt, transaction.UpdatedAt)
+			err := transactionRepo.Create(ctx, transaction)
 			if err != nil {
-				log.Fatalf("Failed to insert transaction: %v", err)
+				return err
 			}
 
 			// Update wallet balance
-			_, err = db.GetPool().Exec(ctx,
-				"UPDATE wallets SET balance = balance + $1, updated_at = $2 WHERE id = $3",
-				transaction.Amount, time.Now(), wallet.ID)
+			wallet.Balance += amount
+			err = walletRepo.Update(ctx, wallet)
 			if err != nil {
-				log.Fatalf("Failed to update wallet balance: %v", err)
+				return err
 			}
 		}
 	}
 
 	log.Println("Seeded transactions")
+	return nil
 }

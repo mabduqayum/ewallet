@@ -5,12 +5,14 @@ import (
 	"database/sql"
 	"errors"
 	"ewallet/internal/models"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"time"
 )
 
 type WalletRepository interface {
+	Create(ctx context.Context, wallet models.Wallet) error
 	Exists(ctx context.Context, walletID uuid.UUID) (bool, error)
 	GetByID(ctx context.Context, walletID uuid.UUID) (*models.Wallet, error)
 	Update(ctx context.Context, wallet *models.Wallet) error
@@ -23,6 +25,26 @@ type PostgresWalletRepository struct {
 
 func NewPostgresWalletRepository(pool *pgxpool.Pool) *PostgresWalletRepository {
 	return &PostgresWalletRepository{pool: pool}
+}
+
+func (r *PostgresWalletRepository) Create(ctx context.Context, wallet models.Wallet) error {
+	_, err := r.pool.Exec(ctx,
+		`INSERT INTO wallets (id, client_id, type, balance, currency, active, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+		wallet.ID,
+		wallet.ClientID,
+		wallet.Type,
+		wallet.Balance,
+		wallet.Currency,
+		wallet.Active,
+		wallet.CreatedAt,
+		wallet.UpdatedAt)
+
+	if err != nil {
+		return fmt.Errorf("failed to create wallet: %w", err)
+	}
+
+	return nil
 }
 
 func (r *PostgresWalletRepository) Exists(ctx context.Context, walletID uuid.UUID) (bool, error) {
