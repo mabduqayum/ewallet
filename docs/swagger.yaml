@@ -2,51 +2,57 @@ openapi: 3.0.0
 info:
   title: E-Wallet API
   version: 1.0.0
-  description: API for e-wallet services providing functionality for checking wallets, topping up, viewing statistics, and checking balances.
+  description: API for e-wallet services
 
 servers:
-  - url: http://127.0.0.1:8080
-    description: Local development server
-
-tags:
-  - name: wallet
-    description: Wallet operations
+  - url: http://127.0.0.1:8080/
 
 paths:
-  /api/v1/check:
-    post:
-      summary: Check if a wallet exists
-      description: Verifies the existence of a wallet based on the provided wallet ID.
-      tags:
-        - wallet
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/WalletCheckRequest'
+  /health:
+    get:
+      summary: Check the health status of the API
       responses:
         '200':
           description: Successful response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WalletCheckResponse'
+                type: object
+                properties:
+                  status:
+                    type: string
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/wallet/exists:
+    post:
+      summary: Check if an e-wallet account exists
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WalletIDRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exists:
+                    type: boolean
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  /api/v1/topup:
+  /api/v1/wallet/top-up:
     post:
-      summary: Top up a wallet
-      description: Adds funds to a specified wallet, respecting the maximum balance limits for identified and unidentified accounts.
-      tags:
-        - wallet
+      summary: Top up an e-wallet
       requestBody:
         required: true
         content:
@@ -59,221 +65,119 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TopUpResponse'
+                type: object
+                properties:
+                  message:
+                    type: string
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '422':
-          $ref: '#/components/responses/UnprocessableEntity'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  /api/v1/stats:
+  /api/v1/wallet/stats:
     post:
-      summary: Get monthly top-up statistics
-      description: Retrieves the total number and sum of top-up operations for a specific wallet in a given month and year.
-      tags:
-        - wallet
+      summary: Get the total number and sum of top-up operations for the current month
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/StatsRequest'
+              $ref: '#/components/schemas/WalletIDRequest'
       responses:
         '200':
           description: Successful response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StatsResponse'
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  sum:
+                    type: number
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  /api/v1/balance:
+  /api/v1/wallet/balance:
     post:
-      summary: Get wallet balance
-      description: Retrieves the current balance of a specified wallet.
-      tags:
-        - wallet
+      summary: Get the e-wallet balance
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BalanceRequest'
+              $ref: '#/components/schemas/WalletIDRequest'
       responses:
         '200':
           description: Successful response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BalanceResponse'
+                type: object
+                properties:
+                  balance:
+                    type: number
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
 
 components:
   schemas:
-    WalletCheckRequest:
+    WalletIDRequest:
       type: object
       properties:
-        walletId:
+        walletID:
           type: string
-          example: "W123456789"
-          description: Unique identifier of the wallet
+          format: uuid
       required:
-        - walletId
-
-    WalletCheckResponse:
-      type: object
-      properties:
-        exists:
-          type: boolean
-          example: true
-          description: Indicates whether the wallet exists
+        - walletID
 
     TopUpRequest:
       type: object
       properties:
-        walletId:
+        walletID:
           type: string
-          example: "W123456789"
-          description: Unique identifier of the wallet
+          format: uuid
         amount:
           type: number
-          format: float
           minimum: 0.01
-          example: 100.50
-          description: Amount to top up (in somoni)
       required:
-        - walletId
+        - walletID
         - amount
-
-    TopUpResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: true
-          description: Indicates whether the top-up was successful
-        newBalance:
-          type: number
-          format: float
-          example: 500.75
-          description: New balance after the top-up
-
-    StatsRequest:
-      type: object
-      properties:
-        walletId:
-          type: string
-          example: "W123456789"
-          description: Unique identifier of the wallet
-        month:
-          type: integer
-          minimum: 1
-          maximum: 12
-          example: 8
-          description: Month for which to retrieve statistics
-        year:
-          type: integer
-          minimum: 2000
-          maximum: 2100
-          example: 2024
-          description: Year for which to retrieve statistics
-      required:
-        - walletId
-        - month
-        - year
-
-    StatsResponse:
-      type: object
-      properties:
-        count:
-          type: integer
-          example: 5
-          description: Number of top-up operations in the specified month
-        totalAmount:
-          type: number
-          format: float
-          example: 1000.00
-          description: Total amount of top-ups in the specified month (in somoni)
-
-    BalanceRequest:
-      type: object
-      properties:
-        walletId:
-          type: string
-          example: "W123456789"
-          description: Unique identifier of the wallet
-      required:
-        - walletId
-
-    BalanceResponse:
-      type: object
-      properties:
-        balance:
-          type: number
-          format: float
-          example: 500.75
-          description: Current balance of the wallet (in somoni)
 
     Error:
       type: object
       properties:
         error:
           type: string
-          example: "Invalid request parameters"
-        details:
-          type: string
-          example: "WalletId must be a non-empty string"
 
   responses:
     BadRequest:
-      description: Bad request due to invalid input
+      description: Bad request
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
 
     Unauthorized:
-      description: Unauthorized access
+      description: Unauthorized
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
 
-    NotFound:
-      description: Resource not found
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-
-    UnprocessableEntity:
-      description: Unable to process the request
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-
-    TooManyRequests:
-      description: Rate limit exceeded
+    InternalServerError:
+      description: Internal server error
       content:
         application/json:
           schema:
@@ -292,8 +196,3 @@ components:
 security:
   - ApiKeyAuth: []
     DigestAuth: []
-
-x-rate-limit:
-  description: Requests are limited to 100 per minute per API key
-  limit: 100
-  period: 60
