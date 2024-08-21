@@ -92,7 +92,7 @@ func seedTransactions(ctx context.Context, transactionRepo repository.Transactio
 			}
 
 			wallet.Balance += amount
-			if err := walletRepo.Update(ctx, wallet); err != nil {
+			if err := walletRepo.Update(ctx, wallet, amount); err != nil {
 				return err
 			}
 		}
