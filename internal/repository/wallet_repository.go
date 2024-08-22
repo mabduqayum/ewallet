@@ -2,8 +2,6 @@ package repository
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"fmt"
 	"time"
 
@@ -57,9 +55,6 @@ func (r *PostgresWalletRepository) GetByID(ctx context.Context, walletID uuid.UU
 	wallet := &models.Wallet{}
 	err := r.pool.QueryRow(ctx, "SELECT id, type, balance, currency, created_at, updated_at FROM wallets WHERE id = $1", walletID).
 		Scan(&wallet.ID, &wallet.Type, &wallet.Balance, &wallet.Currency, &wallet.CreatedAt, &wallet.UpdatedAt)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
-	}
 	return wallet, err
 }
 
