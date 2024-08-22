@@ -1,1 +1,0 @@
-ALTER TABLE wallets ADD COLUMN IF NOT EXISTS client_id UUID;

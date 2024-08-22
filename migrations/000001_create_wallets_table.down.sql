@@ -1,2 +1,0 @@
-DROP TABLE IF EXISTS wallets;
-DROP TYPE IF EXISTS wallet_type;
