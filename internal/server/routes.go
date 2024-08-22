@@ -2,11 +2,12 @@ package server
 
 import (
 	"context"
-	"ewallet/internal/handlers"
-	"ewallet/internal/middleware"
 	"fmt"
 	"log"
 	"time"
+
+	"github.com/mabduqayum/ewallet/internal/handlers"
+	"github.com/mabduqayum/ewallet/internal/middleware"
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"

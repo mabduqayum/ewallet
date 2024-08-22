@@ -3,11 +3,12 @@ package database
 import (
 	"context"
 	"errors"
-	"ewallet/internal/config"
 	"fmt"
 	"log"
 	"strconv"
 	"time"
+
+	"github.com/mabduqayum/ewallet/internal/config"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"

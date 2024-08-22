@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"ewallet/internal/services"
+	"github.com/mabduqayum/ewallet/internal/services"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"

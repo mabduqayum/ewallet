@@ -3,7 +3,8 @@ package services
 import (
 	"context"
 	"errors"
-	"ewallet/internal/repository"
+
+	"github.com/mabduqayum/ewallet/internal/repository"
 
 	"github.com/google/uuid"
 )

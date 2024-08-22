@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"ewallet/internal/services"
-	"ewallet/internal/utils/hmac"
+	"github.com/mabduqayum/ewallet/internal/services"
+	"github.com/mabduqayum/ewallet/internal/utils/hmac"
 
 	"github.com/gofiber/fiber/v2"
 )

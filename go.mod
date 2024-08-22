@@ -1,4 +1,4 @@
-module ewallet
+module github.com/mabduqayum/ewallet
 
 go 1.23.0
 

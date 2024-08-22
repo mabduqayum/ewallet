@@ -4,9 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"ewallet/internal/models"
 	"fmt"
 	"time"
+
+	"github.com/mabduqayum/ewallet/internal/models"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"

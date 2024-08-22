@@ -2,8 +2,9 @@ package services
 
 import (
 	"context"
-	"ewallet/internal/models"
-	"ewallet/internal/repository"
+
+	"github.com/mabduqayum/ewallet/internal/models"
+	"github.com/mabduqayum/ewallet/internal/repository"
 
 	"github.com/google/uuid"
 )

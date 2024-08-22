@@ -2,12 +2,11 @@ package main
 
 import (
 	"context"
-	"ewallet/internal/config"
-	"ewallet/internal/database"
-	"ewallet/scripts"
 	"log"
 
-	_ "github.com/joho/godotenv/autoload"
+	"github.com/mabduqayum/ewallet/internal/config"
+	"github.com/mabduqayum/ewallet/internal/database"
+	"github.com/mabduqayum/ewallet/scripts"
 )
 
 func main() {

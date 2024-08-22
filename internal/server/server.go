@@ -1,10 +1,10 @@
 package server
 
 import (
-	"ewallet/internal/config"
-	"ewallet/internal/database"
-	"ewallet/internal/repository"
-	"ewallet/internal/services"
+	"github.com/mabduqayum/ewallet/internal/config"
+	"github.com/mabduqayum/ewallet/internal/database"
+	"github.com/mabduqayum/ewallet/internal/repository"
+	"github.com/mabduqayum/ewallet/internal/services"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"

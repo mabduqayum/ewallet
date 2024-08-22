@@ -2,12 +2,13 @@ package scripts
 
 import (
 	"context"
-	"ewallet/internal/models"
-	"ewallet/internal/repository"
 	"fmt"
 	"log"
 	"math/rand"
 	"time"
+
+	"github.com/mabduqayum/ewallet/internal/models"
+	"github.com/mabduqayum/ewallet/internal/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
