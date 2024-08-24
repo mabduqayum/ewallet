@@ -85,80 +85,86 @@ cloud "External Systems" {
 Here's a folder structure for this architecture:
 
 ```
-ewallet/
-├── .github/
-│   └── workflows/
+ewallet
+├── .github
+│   └── workflows
 │       ├── go-test.yml
 │       └── release.yml
-├── cmd/
-│   └── api/
+├── cmd
+│   ├── api
+│   │   └── main.go
+│   └── seed
 │       └── main.go
-├── docs/
-│   ├── api.md
+├── docs
 │   └── swagger.yaml
-├── internal/
-│   ├── config/
+├── internal
+│   ├── config
 │   │   ├── config.development.yaml
 │   │   ├── config.go
 │   │   ├── config.production.yaml
 │   │   └── config.staging.yaml
-│   ├── constants/
+│   ├── constants
 │   │   └── constants.go
-│   ├── database/
+│   ├── database
 │   │   ├── database.go
 │   │   └── database_test.go
-│   ├── errors/
+│   ├── errors
 │   │   └── errors.go
-│   ├── handlers/
-│   │   ├── health_handler.go
-│   │   ├── health_handler_test.go
-│   │   ├── transaction_handler.go
-│   │   ├── transaction_handler_test.go
+│   ├── handlers
 │   │   ├── wallet_handler.go
 │   │   └── wallet_handler_test.go
-│   ├── logging/
+│   ├── logging
 │   │   └── logger.go
-│   ├── metrics/
+│   ├── metrics
 │   │   └── metrics.go
-│   ├── middleware/
+│   ├── middleware
 │   │   └── auth.go
-│   ├── models/
+│   ├── mocks
+│   ├── models
 │   │   ├── client.go
 │   │   ├── client_test.go
 │   │   ├── transaction.go
 │   │   ├── transaction_test.go
 │   │   ├── wallet.go
 │   │   └── wallet_test.go
-│   ├── repository/
+│   ├── repository
+│   │   ├── client_repository.go
 │   │   ├── transaction_repository.go
 │   │   └── wallet_repository.go
-│   ├── server/
+│   ├── server
 │   │   ├── routes.go
 │   │   ├── routes_test.go
 │   │   └── server.go
-│   ├── services/
+│   ├── services
 │   │   ├── authentication_service.go
 │   │   ├── authentication_service_test.go
+│   │   ├── client_service.go
+│   │   ├── client_service_test.go
 │   │   ├── transaction_service.go
 │   │   ├── transaction_service_test.go
 │   │   ├── wallet_service.go
 │   │   └── wallet_service_test.go
-│   ├── utils/
-│   │   └── hmac.go
-│   └── validation/
+│   ├── utils
+│   │   └── hmac
+│   │       └── hmac.go
+│   └── validation
 │       └── validator.go
-├── scripts/
+├── migrations
+│   ├── 000001_init.down.sql
+│   └── 000001_init.up.sql
+├── scripts
 │   └── seed_data.go
-├── tests/
-│   └── integration/
+├── tests
+│   └── integration
 │       └── api_test.go
 ├── .air.toml
-├── .env
 ├── .gitignore
 ├── .goreleaser.yml
 ├── docker-compose.yml
 ├── go.mod
 ├── go.sum
+├── main.exe
 ├── Makefile
-└── README.md
+├── README.md
+└── TASK.md
 ```
