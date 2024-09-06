@@ -24,7 +24,7 @@ func main() {
 	}
 
 	ctx := context.Background()
-	db, err := database.New(ctx, cfg)
+	db, err := database.New(ctx, &cfg.Database)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
@@ -34,7 +34,7 @@ func main() {
 		log.Fatalf("Failed to run database migrations: %v", err)
 	}
 
-	s := server.New(cfg, db)
+	s := server.New(&cfg.Server, db)
 	s.RegisterFiberRoutes()
 
 	log.Printf("Starting server on %s", cfg.Server.Address())

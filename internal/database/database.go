@@ -32,18 +32,18 @@ type Service interface {
 
 type service struct {
 	db     *pgxpool.Pool
-	config *config.Config
+	config *config.DatabaseConfig
 }
 
 var dbInstance *service
 
-func New(ctx context.Context, cfg *config.Config) (Service, error) {
+func New(ctx context.Context, cfg *config.DatabaseConfig) (Service, error) {
 	// Reuse Connection
 	if dbInstance != nil {
 		return dbInstance, nil
 	}
 
-	connStr := cfg.Database.ConnectionString()
+	connStr := cfg.ConnectionString()
 
 	poolConfig, err := pgxpool.ParseConfig(connStr)
 	if err != nil {
@@ -106,13 +106,13 @@ func (s *service) Health() map[string]string {
 
 // Close closes the database connection pool.
 func (s *service) Close() {
-	log.Printf("Closing connection pool to database: %s", s.config.Database.DBName)
+	log.Printf("Closing connection pool to database: %s", s.config.DBName)
 	s.db.Close()
 }
 
 func (s *service) RunMigrations() error {
 	migrationPath := "file://migrations"
-	m, err := migrate.New(migrationPath, s.config.Database.ConnectionString())
+	m, err := migrate.New(migrationPath, s.config.ConnectionString())
 	if err != nil {
 		return fmt.Errorf("failed to create migrate instance: %w", err)
 	}

@@ -13,13 +13,13 @@ import (
 type FiberServer struct {
 	app *fiber.App
 	db  database.Service
-	cfg *config.Config
+	cfg *config.ServerConfig
 
 	walletService *services.WalletService
 	clientService *services.ClientService
 }
 
-func New(cfg *config.Config, db database.Service) *FiberServer {
+func New(cfg *config.ServerConfig, db database.Service) *FiberServer {
 	walletRepo := repository.NewPostgresWalletRepository(db.GetPool())
 	walletService := services.NewWalletService(walletRepo)
 
@@ -29,7 +29,7 @@ func New(cfg *config.Config, db database.Service) *FiberServer {
 	server := &FiberServer{
 		app: fiber.New(fiber.Config{
 			ServerHeader: "ewallet",
-			AppName:      "ewallet v" + cfg.Server.Version,
+			AppName:      "ewallet v" + cfg.Version,
 		}),
 
 		db:            db,
@@ -45,7 +45,7 @@ func New(cfg *config.Config, db database.Service) *FiberServer {
 }
 
 func (s *FiberServer) Listen() error {
-	return s.app.Listen(s.cfg.Server.Address())
+	return s.app.Listen(s.cfg.Address())
 }
 
 func (s *FiberServer) Shutdown() error {
