@@ -16,7 +16,7 @@ func main() {
 	}
 
 	ctx := context.Background()
-	db, err := database.New(ctx, cfg)
+	db, err := database.New(ctx, &cfg.Database)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
